@@ -41,11 +41,25 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        return userRepository.findByEmail(request.email())
-                .filter(u -> passwordEncoder.matches(request.password(), u.getPasswordHash()))
-                .map(u -> ResponseEntity.ok(new UserResponse(u.getId(), u.getFullName(), u.getEmail())))
-                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Invalid email or password")));
+public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+
+    var user = userRepository.findByEmail(request.email());
+
+    if (user.isEmpty() ||
+            !passwordEncoder.matches(request.password(), user.get().getPasswordHash())) {
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Invalid email or password"));
     }
+
+    User u = user.get();
+
+    return ResponseEntity.ok(
+            new UserResponse(
+                    u.getId(),
+                    u.getFullName(),
+                    u.getEmail()
+            )
+    );
+}
 }
